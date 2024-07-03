@@ -1,0 +1,49 @@
+name: 1C-API-DB Automations-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+# parameters:
+#     - name: dbFilePath
+#       type: string
+
+
+variables:
+- name: WorkingDirectory
+  value: "$(Build.Repository.LocalPath)"
+
+- name: dbPathPrefix
+  value: "OneCustomerApi/Database/Script"
+
+stages:
+- stage: Build
+  displayName: "Build 1C.NET API"
+
+  jobs:
+  - job: BuildOneCustomerApp
+    displayName: "1C.NET-CI"
+    steps:
+      
+      - task: Bash@3
+        inputs:
+          filePath: '$(Build.Repository.LocalPath)/mssql-setup.sh'
+          workingDirectory: '$(Build.Repository.LocalPath)'
+      
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            shopt -s globstar  # Include hidden files (optional)
+            workingDirectory: "$(Build.Repository.LocalPath)"
+            for file in "$(Build.Repository.LocalPath)/dbautomation_*.txt"; do
+              if [[ ! -f "$file" ]]; then
+                echo "Error: File not found: $file"
+              else
+                echo "Processing file: $file"
+                while IFS= read -r line; do
+                  echo "$line"
+                done < "$file"
+              fi
+            done
